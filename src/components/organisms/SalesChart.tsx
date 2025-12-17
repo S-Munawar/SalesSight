@@ -17,19 +17,15 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { ChartTitle, FilterInput, ChartTypeSelector } from "../molecules";
-import { useSalesData } from "@/hooks/useSalesData";
-
-export interface SalesData {
-  year: number;
-  sales: number;
-  [key: string]: string | number;
-}
+import { SalesData } from "@/hooks/useSalesData";
 
 type ChartType = "bar" | "line" | "pie";
 
 interface SalesChartProps {
   title?: string;
   subtitle?: string;
+  data?: SalesData[];
+  loading?: boolean;
 }
 
 const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
@@ -39,27 +35,16 @@ const DEFAULT_COLOR = "#3B82F6";
 export default function SalesChart({
   title = "Annual Sales Overview",
   subtitle = "Sales data from 2022-2024",
+  data = [],
+  loading = false,
 }: SalesChartProps) {
-  const [salesData, setSalesData] = useState<SalesData[]>([]);
+  const [salesData, setSalesData] = useState<SalesData[]>(data);
   const [chartType, setChartType] = useState<ChartType>("bar");
   const [threshold, setThreshold] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-  const { fetchSalesData } = useSalesData();
-
-  const loadData = useCallback(async () => {
-    try {
-      const data = await fetchSalesData();
-      setSalesData(data);
-    } catch (error) {
-      console.error("Failed to load sales data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchSalesData]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    setSalesData(data);
+  }, [data]);
 
   const thresholdValue = threshold ? parseFloat(threshold) : null;
 
