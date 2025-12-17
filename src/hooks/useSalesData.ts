@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, useEffect, useRef } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 
 // Types for sales data
 export interface MonthlyData {
@@ -122,24 +122,16 @@ function calculateInsights(data: SalesData[]): SalesInsights | null {
   };
 }
 
-// Hook for fetching sales data - real-time API integration
-export function useSalesData(pollInterval: number = 5000) {
+// Hook for fetching sales data from API
+export function useSalesData() {
   const [salesData, setSalesData] = useState<SalesData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [isLive, setIsLive] = useState(false);
-  const [isPolling, setIsPolling] = useState(true);
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch data function - now uses API
+  // Fetch data function - uses API
   const fetchSalesData = useCallback(async (): Promise<SalesData[]> => {
-    const response = await fetch('/api/sales', {
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache',
-      }
-    });
+    const response = await fetch('/api/sales');
     
     if (!response.ok) {
       throw new Error('Failed to fetch sales data');
@@ -147,59 +139,31 @@ export function useSalesData(pollInterval: number = 5000) {
     
     const result: ApiResponse = await response.json();
     setLastUpdated(new Date(result.timestamp));
-    setIsLive(result.isLive);
     return result.data;
   }, []);
 
   // Load data function
-  const loadData = useCallback(async (showLoading: boolean = false) => {
+  const loadData = useCallback(async () => {
     try {
-      if (showLoading) setLoading(true);
+      setLoading(true);
       const data = await fetchSalesData();
       setSalesData(data);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch data"));
     } finally {
-      if (showLoading) setLoading(false);
+      setLoading(false);
     }
   }, [fetchSalesData]);
 
   // Initial load
   useEffect(() => {
-    loadData(true);
+    loadData();
   }, [loadData]);
-
-  // Polling for real-time updates
-  useEffect(() => {
-    if (!isPolling || pollInterval <= 0) {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
-      return;
-    }
-
-    pollIntervalRef.current = setInterval(() => {
-      loadData(false); // Silent refresh without loading state
-    }, pollInterval);
-
-    return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
-    };
-  }, [isPolling, pollInterval, loadData]);
-
-  // Toggle polling
-  const togglePolling = useCallback(() => {
-    setIsPolling(prev => !prev);
-  }, []);
 
   // Manual refresh
   const refetch = useCallback(async () => {
-    await loadData(true);
+    await loadData();
   }, [loadData]);
 
   // Calculate insights when data changes
@@ -243,9 +207,6 @@ export function useSalesData(pollInterval: number = 5000) {
     monthlyChartData,
     comparisonData,
     lastUpdated,
-    isLive,
-    isPolling,
-    togglePolling,
     refetch,
   };
 }

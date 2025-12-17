@@ -29,62 +29,10 @@ const AverageIcon = () => (
   </svg>
 );
 
-const RefreshIcon = ({ className }: { className?: string }) => (
-  <svg className={className || "w-4 h-4"} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+const RefreshIcon = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
   </svg>
-);
-
-// Real-time status indicator component
-const LiveIndicator = ({ isLive, isPolling, lastUpdated, onToggle, onRefresh }: {
-  isLive: boolean;
-  isPolling: boolean;
-  lastUpdated: Date | null;
-  onToggle: () => void;
-  onRefresh: () => void;
-}) => (
-  <div className="flex items-center gap-4 flex-wrap">
-    {/* Live status badge */}
-    <div className="flex items-center gap-2">
-      <span className={`relative flex h-3 w-3 ${isLive && isPolling ? '' : 'opacity-50'}`}>
-        {isLive && isPolling && (
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-        )}
-        <span className={`relative inline-flex rounded-full h-3 w-3 ${isLive && isPolling ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-      </span>
-      <span className={`text-sm font-medium ${isLive && isPolling ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
-        {isLive && isPolling ? 'Live' : 'Paused'}
-      </span>
-    </div>
-
-    {/* Last updated time */}
-    {lastUpdated && (
-      <span className="text-sm text-gray-500 dark:text-gray-400">
-        Updated: {lastUpdated.toLocaleTimeString()}
-      </span>
-    )}
-
-    {/* Control buttons */}
-    <div className="flex items-center gap-2">
-      <button
-        onClick={onToggle}
-        className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-          isPolling 
-            ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400' 
-            : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400'
-        }`}
-      >
-        {isPolling ? 'Pause' : 'Resume'}
-      </button>
-      <button
-        onClick={onRefresh}
-        className="p-1.5 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 transition-colors"
-        title="Refresh now"
-      >
-        <RefreshIcon className="w-4 h-4" />
-      </button>
-    </div>
-  </div>
 );
 
 export default function DashboardPage() {
@@ -94,11 +42,8 @@ export default function DashboardPage() {
     insights, 
     comparisonData,
     lastUpdated,
-    isLive,
-    isPolling,
-    togglePolling,
     refetch
-  } = useSalesData(5000); // Poll every 5 seconds
+  } = useSalesData();
 
   // Determine trend direction based on growth rate
   const getTrendDirection = (rate: number): TrendDirection => {
@@ -123,16 +68,24 @@ export default function DashboardPage() {
                 Sales Dashboard
               </Heading>
               <p className="mt-2 text-gray-600 dark:text-gray-400">
-                Real-time sales performance tracking
+                Track and analyze your sales performance
               </p>
             </div>
-            <LiveIndicator 
-              isLive={isLive}
-              isPolling={isPolling}
-              lastUpdated={lastUpdated}
-              onToggle={togglePolling}
-              onRefresh={refetch}
-            />
+            <div className="flex items-center gap-3">
+              {lastUpdated && (
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Updated: {lastUpdated.toLocaleTimeString()}
+                </span>
+              )}
+              <button
+                onClick={refetch}
+                disabled={loading}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 transition-colors disabled:opacity-50"
+              >
+                <RefreshIcon />
+                Refresh
+              </button>
+            </div>
           </div>
         </header>
 
@@ -320,18 +273,7 @@ export default function DashboardPage() {
 
           {/* Quick Stats Summary */}
           <section className="bg-linear-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold">📊 Quick Performance Summary</h3>
-              {isLive && isPolling && (
-                <span className="flex items-center gap-2 text-sm bg-white/20 px-3 py-1 rounded-full">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-300 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400"></span>
-                  </span>
-                  Real-time
-                </span>
-              )}
-            </div>
+            <h3 className="text-lg font-bold mb-4">📊 Quick Performance Summary</h3>
             <div className="grid md:grid-cols-5 gap-6">
               <div>
                 <p className="text-blue-200 text-sm">Best Month</p>
